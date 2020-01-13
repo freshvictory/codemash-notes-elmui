@@ -2,7 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html.Styled exposing (Html, div, text, toUnstyled)
+import Element
 import Page
 import Page.Home as Home
 import Url
@@ -107,7 +107,7 @@ view model =
             Page.view never
                 { title = "Not found"
                 , attrs = []
-                , body = [ text "Page not found." ]
+                , body = [ Element.text "Page not found." ]
                 }
 
         Home home ->

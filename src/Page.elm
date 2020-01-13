@@ -1,15 +1,8 @@
 module Page exposing (Details, view)
 
 import Browser
-import Html.Styled
-    exposing
-        ( Attribute
-        , Html
-        , div
-        , main_
-        , map
-        , toUnstyled
-        )
+import Element exposing (Element)
+import Element.Region as Region
 import Html.Styled.Attributes
     exposing
         ( id
@@ -22,8 +15,8 @@ import Html.Styled.Attributes
 
 type alias Details msg =
     { title : String
-    , attrs : List (Attribute msg)
-    , body : List (Html msg)
+    , attrs : List (Element.Attribute msg)
+    , body : List (Element msg)
     }
 
 
@@ -34,21 +27,19 @@ type alias Details msg =
 view : (a -> msg) -> Details a -> Browser.Document msg
 view toMsg details =
     { title = details.title
-    , body = [ viewApp toMsg details.attrs details.body |> toUnstyled ]
+    , body = [ viewApp toMsg details.attrs details.body |> Element.layout [] ]
     }
 
 
-viewApp : (a -> msg) -> List (Attribute a) -> List (Html a) -> Html msg
+viewApp : (a -> msg) -> List (Element.Attribute a) -> List (Element a) -> Element msg
 viewApp toMsg attrs body =
-    div
-        [ id "top"
-        ]
-        [ map toMsg (viewBody attrs body)
-        ]
+    Element.el
+        []
+        (Element.map toMsg (viewBody attrs body))
 
 
-viewBody : List (Attribute msg) -> List (Html msg) -> Html msg
+viewBody : List (Element.Attribute msg) -> List (Element msg) -> Element msg
 viewBody attrs body =
-    main_
-        attrs
+    Element.column
+        (List.concat [ [ Region.mainContent ], attrs ])
         body

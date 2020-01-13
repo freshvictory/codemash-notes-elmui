@@ -1,30 +1,13 @@
 module Page.Home exposing (Model, Msg, init, update, view)
 
 import Api exposing (Note)
-import Css exposing (..)
 import Dict exposing (Dict)
-import Element exposing (Element, alignRight, centerY, el, fill, rgb255, spacing)
+import Element exposing (Element, rgb255)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Html.Styled
-    exposing
-        ( Html
-        , button
-        , div
-        , form
-        , h1
-        , header
-        , input
-        , label
-        , option
-        , select
-        , span
-        , text
-        , textarea
-        )
-import Html.Styled.Attributes exposing (css, for, id, type_, value)
-import Html.Styled.Events as Events
+import Element.Region as Region
 import Http
 import Page
 
@@ -174,7 +157,12 @@ update msg model =
 view : Model -> Page.Details Msg
 view model =
     { title = "Home"
-    , attrs = []
+    , attrs =
+        [ Font.size 16
+        , Font.family
+            [ Font.typeface "-apple-system"
+            ]
+        ]
     , body =
         [ viewHeader model
         , viewContent model
@@ -182,73 +170,66 @@ view model =
     }
 
 
-viewHeader : Model -> Html Msg
+viewHeader : Model -> Element Msg
 viewHeader model =
-    header
-        [ css
-            [ padding (px 20)
-            , borderBottom3 (px 2) solid (hex "AAA")
-            , displayFlex
-            , justifyContent spaceBetween
-            , alignItems center
-            ]
+    Element.row
+        [ Region.navigation
+        , Element.padding 20
+        , Border.widthEach { bottom = 1, top = 0, left = 0, right = 0 }
+        , Element.width Element.fill
         ]
-        [ div
-            []
-            [ h1
-                [ css
-                    [ margin zero
-                    ]
-                ]
-                [ text "CodeMash Notes" ]
+        [ Element.el
+            [ Region.heading 1
+            , Font.size 32
+            , Font.bold
             ]
+            (Element.text "CodeMash Notes")
         , case model.editState of
             Editing n ->
                 if n.id /= 0 then
                     viewAddNotesButton
 
                 else
-                    text ""
+                    Element.text ""
 
             _ ->
                 viewAddNotesButton
         ]
 
 
-viewAddNotesButton : Html Msg
+viewAddNotesButton : Element Msg
 viewAddNotesButton =
-    button
-        [ css
-            [ color (hex "555")
-            , border3 (px 1) solid (hex "555")
-            , borderRadius (px 5)
-            , padding (px 5)
-            ]
-        , Events.onClick AddNote
+    Input.button
+        [ Font.color (rgb255 85 85 85)
+        , Border.width 1
+        , Border.color (rgb255 85 85 85)
+        , Border.rounded 5
+        , Element.padding 5
+        , Element.alignRight
         ]
-        [ text "add notes" ]
+        { onPress = Just AddNote
+        , label = Element.text "add notes"
+        }
 
 
-viewContent : Model -> Html Msg
+viewContent : Model -> Element Msg
 viewContent model =
-    div
-        [ css
-            [ margin (px 20)
-            ]
+    Element.el
+        [ Element.padding 20
         ]
-        [ case model.requestState of
+        (case model.requestState of
             Success ->
                 viewNotes model
 
             Failure err ->
-                text err
+                Element.text err
 
             Loading ->
-                text "Loading notes..."
-        ]
+                Element.text "Loading notes..."
+        )
 
 
-viewNotes : Model -> Html Msg
+viewNotes : Model -> Element Msg
 viewNotes model =
     let
         noteEntries =
@@ -263,8 +244,9 @@ viewNotes model =
                 _ ->
                     []
     in
-    div
-        []
+    Element.column
+        [ Element.spacing 20
+        ]
         (List.concat
             [ noteEntries
             , model.notes
@@ -274,7 +256,7 @@ viewNotes model =
         )
 
 
-viewNoteSummary : Model -> Note -> Html Msg
+viewNoteSummary : Model -> Note -> Element Msg
 viewNoteSummary model note =
     case model.editState of
         Editing n ->
@@ -282,10 +264,10 @@ viewNoteSummary model note =
                 viewNoteForm n
 
             else
-                Html.Styled.fromUnstyled (Element.layout [] (viewNoteDefault note))
+                viewNoteDefault note
 
         _ ->
-            Html.Styled.fromUnstyled (Element.layout [] (viewNoteDefault note))
+            viewNoteDefault note
 
 
 viewNoteDefault : Note -> Element Msg
@@ -296,10 +278,6 @@ viewNoteDefault note =
         , Border.color (rgb255 170 170 170)
         , Border.rounded 10
         , Element.spacing 10
-        , Font.size 16
-        , Font.family
-            [ Font.typeface "-apple-system"
-            ]
         , Element.width Element.fill
         ]
         [ Element.row
@@ -315,26 +293,26 @@ viewNoteDefault note =
                 [ Element.row
                     [ Element.spacing 5
                     ]
-                    [ el
+                    [ Element.el
                         [ Font.bold
                         ]
                         (Element.text note.title)
-                    , el
+                    , Element.el
                         []
                         (Element.text "•")
                     ]
                 , Element.row
                     [ Element.spacing 5
                     ]
-                    [ el
+                    [ Element.el
                         [ Font.color (rgb255 85 85 85)
                         ]
                         (Element.text note.presenter)
-                    , el
+                    , Element.el
                         []
                         (Element.text "•")
                     ]
-                , el
+                , Element.el
                     [ Font.color
                         (if note.rating > 7 then
                             rgb255 80 185 70
@@ -373,202 +351,122 @@ viewNoteDefault note =
         ]
 
 
-viewNoteForm : Note -> Html Msg
+viewNoteForm : Note -> Element Msg
 viewNoteForm note =
-    form
-        [ css
-            [ padding (px 15)
-            , border3 (px 2) solid (hex "AAA")
-            , borderRadius (px 10)
-            , marginBottom (px 20)
-            ]
-        , Events.onSubmit Save
+    Element.column
+        [ Border.width 2
+        , Border.color (rgb255 170 170 170)
+        , Border.rounded 10
+        , Element.padding 15
+        , Element.spacing 10
+        , Element.width Element.fill
         ]
-        [ div
-            [ css
-                [ marginLeft auto
-                , displayFlex
-                , maxWidth maxContent
-                , color (hex "555")
-                , fontSize small
-                ]
+        [ Element.row
+            [ Element.alignRight
+            , Font.color (rgb255 85 85 85)
+            , Font.size 13
             ]
-            [ button
-                [ css
-                    [ margin zero
-                    ]
-                , type_ "submit"
+            [ Input.button
+                []
+                { onPress = Just Save
+                , label = Element.text "save"
+                }
+            , Element.el
+                [ Font.family [ Font.monospace ]
                 ]
-                [ text "save" ]
-            , div
-                [ css
-                    [ whiteSpace pre
-                    ]
-                ]
-                [ text " | " ]
-            , button
-                [ css
-                    [ margin zero
-                    ]
-                , Events.onClick StopEditing
-                , type_ "button"
-                ]
-                [ text "cancel" ]
+                (Element.text " | ")
+            , Input.button
+                []
+                { onPress = Just StopEditing
+                , label = Element.text "cancel"
+                }
             ]
-        , div
-            [ css
-                [ displayFlex
-                , flexDirection column
-                , alignItems flexStart
-                ]
+        , Element.column
+            [ Element.spacing 10
+            , Element.width Element.fill
             ]
-            [ formInput "title" "Session title" note.title (\s -> OnNoteChange { note | title = s })
-            , formInput "presenter" "Presenter" note.presenter (\s -> OnNoteChange { note | presenter = s })
+            [ formInput "Session title" note.title (\s -> OnNoteChange { note | title = s })
+            , formInput "Presenter" note.presenter (\s -> OnNoteChange { note | presenter = s })
             , noteRatingInput note
             , noteTextInput note
             ]
         ]
 
 
-noteRatingInput : Note -> Html Msg
+noteRatingInput : Note -> Element Msg
 noteRatingInput note =
-    div
-        [ css
-            [ display inlineFlex
-            , margin2 (px 10) zero
-            , position relative
-            , padding (px 10)
-            , border3 (px 1) solid (hex "AAA")
-            , borderRadius (px 5)
-            , alignItems center
-            ]
+    Element.row
+        [ Element.width Element.fill
+        , Border.width 1
+        , Border.rounded 5
+        , Border.color (rgb255 170 170 170)
+        , Element.padding 10
         ]
-        [ label
-            [ for "rating"
-            , css
-                [ position absolute
-                , backgroundColor (hex "FFF")
-                , fontSize (px 12)
-                , lineHeight (num 1)
-                , top (px -6)
-                , left (px 12)
-                , padding2 zero (px 5)
-                ]
-            ]
-            [ text "Rating" ]
-        , select
-            [ css
-                [ margin zero
-                , marginRight (px 5)
-
-                -- , padding zero
-                -- , paddingLeft (px 10)
-                -- , border zero
-                ]
-            , id "rating"
-
-            -- , type_ "number"
-            -- , value (String.fromInt note.rating)
-            -- , Html.Styled.Attributes.max "10"
-            -- , Html.Styled.Attributes.min "1"
-            , Events.onInput
-                (\s ->
-                    case String.toInt s of
-                        Just i ->
-                            OnNoteChange { note | rating = i }
-
-                        _ ->
-                            NoOp
+        [ Input.slider
+            [ Element.behindContent
+                (Element.el
+                    [ Element.width Element.fill
+                    , Element.height (Element.px 2)
+                    , Element.centerY
+                    , Background.color (rgb255 170 170 170)
+                    , Border.rounded 2
+                    ]
+                    Element.none
                 )
             ]
-            (List.map
-                (\n ->
-                    let
-                        s =
-                            String.fromInt n
-                    in
-                    option
-                        [ value s
-                        , Html.Styled.Attributes.selected (n == note.rating)
-                        ]
-                        [ text s ]
-                )
-                (List.range 1 10)
-            )
-        , text "/ 10"
+            { label =
+                Input.labelAbove
+                    []
+                    (Element.text "Rating")
+            , onChange = \i -> OnNoteChange { note | rating = round i }
+            , min = 1.0
+            , max = 10.0
+            , value = toFloat note.rating
+            , step = Just 1
+            , thumb = Input.defaultThumb
+            }
+        , Element.text (String.fromInt note.rating ++ " / 10")
         ]
 
 
-formInput : String -> String -> String -> (String -> Msg) -> Html Msg
-formInput identifier textLabel valueText onInputMsg =
-    div
-        [ css
-            [ position relative
-            , margin2 (px 10) zero
-            , display inlineBlock
+formInput : String -> String -> (String -> Msg) -> Element Msg
+formInput textLabel valueText onInputMsg =
+    Element.el
+        []
+        (Input.text
+            [ Border.width 1
+            , Border.color (rgb255 170 170 170)
+            , Border.rounded 5
+            , Element.padding 10
             ]
-        ]
-        [ label
-            [ for identifier
-            , css
-                [ position absolute
-                , backgroundColor (hex "FFF")
-                , fontSize (px 12)
-                , lineHeight (num 1)
-                , top (px -3)
-                , left (px 12)
-                , padding2 zero (px 5)
-                ]
-            ]
-            [ text textLabel ]
-        , input
-            [ id identifier
-            , value valueText
-            , Events.onInput onInputMsg
-            , css
-                [ border3 (px 1) solid (hex "AAA")
-                , borderRadius (px 5)
-                , padding (px 10)
-                ]
-            ]
-            []
-        ]
+            { onChange = onInputMsg
+            , text = valueText
+            , placeholder = Nothing
+            , label =
+                Input.labelAbove
+                    []
+                    (Element.text textLabel)
+            }
+        )
 
 
-noteTextInput : Note -> Html Msg
+noteTextInput : Note -> Element Msg
 noteTextInput note =
-    div
-        [ css
-            [ marginTop (px 10)
-            , position relative
-            , width (pct 100)
-            ]
+    Element.el
+        [ Element.width Element.fill
         ]
-        [ label
-            [ for "note"
-            , css
-                [ position absolute
-                , backgroundColor (hex "FFF")
-                , fontSize (px 12)
-                , lineHeight (num 1)
-                , top (px -3)
-                , left (px 12)
-                , padding2 zero (px 5)
-                ]
+        (Input.multiline
+            [ Element.padding 10
+            , Border.width 1
+            , Border.color (rgb255 170 170 170)
             ]
-            [ text "Note text" ]
-        , textarea
-            [ css
-                [ width (pct 100)
-                , padding (px 10)
-                , boxSizing borderBox
-                , border3 (px 1) solid (hex "AAA")
-                , borderRadius (px 5)
-                , fontSize inherit
-                ]
-            , id "note"
-            , Events.onInput (\s -> OnNoteChange { note | note = s })
-            ]
-            [ text note.note
-            ]
-        ]
+            { onChange = \s -> OnNoteChange { note | note = s }
+            , text = note.note
+            , spellcheck = True
+            , placeholder = Nothing
+            , label =
+                Input.labelAbove
+                    []
+                    (Element.text "Note text")
+            }
+        )
